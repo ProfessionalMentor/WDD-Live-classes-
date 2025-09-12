@@ -12,8 +12,11 @@ import {
     deleteUserAddressByUserId,
     deleteAllUserAddressesByUserId
 } from '../controllers/userAddressController.js';
+import { protect } from '../Middlewares/authMiddleware.js';
 
 const router = express.Router();
+
+router.use(protect);
 
 router.post('/', createUserAddress);
 router.get('/', getAllUserAddresses);
