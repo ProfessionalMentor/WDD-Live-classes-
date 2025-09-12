@@ -28,7 +28,7 @@ export const createPaymentIntent = catchAsync(async (req, res, next) => {
 
     await payment.save();
 
-    export const createPaymentIntent = catchAsync(async (req, res, next) => {
+    const createPaymentIntent = catchAsync(async (req, res, next) => {
     const { orderId, idempotencyKey } = req.body;
 
     if (!idempotencyKey) {
