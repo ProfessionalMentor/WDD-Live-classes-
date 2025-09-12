@@ -70,6 +70,57 @@ export const deleteAllUserAddresses = async (req, res) => {
     }
 }
 
+export const getUserAddressesByUserId = async (req, res) => {
+    try {
+        const addresses = await userAddress.find({ userId: req.params.userId });
+        return res.status(200).json(addresses);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Something went wrong" });
+    }
+}
+
+export const getUserAddressByUserId = async (req, res) => {
+    try {
+        const address = await userAddress.findOne({ userId: req.params.userId });
+        if (!address) {
+            return res.status(404).json({ message: "Address not found" });
+        }
+        return res.status(200).json(address);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Something went wrong" });
+    }
+}
+
+export const updateUserAddressByUserId = async (req, res) => {
+    try {
+        const updatedAddress = await userAddress.findOneAndUpdate({ userId: req.params.userId }, req.body, { new: true });
+        if (!updatedAddress) {
+            return res.status(404).json({ message: "Address not found" });
+        }
+        return res.status(200).json(updatedAddress);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Something went wrong" });
+    }
+}
+
+export const deleteUserAddressByUserId = async (req, res) => {
+    try {
+        const deletedAddress = await userAddress.findOneAndDelete({ userId: req.params.userId });
+        if (!deletedAddress) {
+            return res.status(404).json({ message: "Address not found" });
+        }
+        return res.status(200).json({ message: "Address deleted successfully" });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Something went wrong" });
+    }
+}
+
+
+
 export const deleteAllUserAddressesByUserId = async (req, res) => {
     try {
         await userAddress.deleteMany({ userId: req.params.userId });

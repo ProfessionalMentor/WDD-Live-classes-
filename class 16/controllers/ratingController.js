@@ -1,4 +1,4 @@
-import { rating } from "../models/cartModel";
+import { rating } from "../models/ratingModel";
 
 
 export const createRating = async (req, res) => {
