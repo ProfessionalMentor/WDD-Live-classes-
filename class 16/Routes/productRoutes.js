@@ -6,6 +6,7 @@ import {
     updateProduct,
     deleteProduct,
     deleteAllProducts,
+    searchProductsController, // Added this
     getProductByUserId,
     getAllProductsByUserId,
     createProductByUserId,
@@ -17,6 +18,7 @@ import { protect } from '../Middlewares/authMiddleware.js';
 
 const router = express.Router();
 
+router.get('/search', searchProductsController); // New route for text search
 router.get('/', getAllProducts);
 router.get('/:id', getProductById);
 router.post('/', protect, createProduct);

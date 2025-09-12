@@ -1,143 +1,127 @@
-import { product } from "../models/productModel";
+import {
+    getAllProducts,
+    getProductById,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    deleteAllProducts,
+    searchProducts, // Added this
+    getProductByUserId,
+    getAllProductsByUserId,
+    createProductByUserId,
+    updateProductByUserId,
+    deleteProductByUserId,
+    deleteAllProductsByUserId
+} from "../services/productService.js";
+import { createProductSchema, updateProductSchema } from "../validations/productValidation.js";
+import ApiError from "../utils/ApiError.js";
+import catchAsync from "../utils/catchAsync.js";
 
+export const getProducts = catchAsync(async (req, res, next) => {
+    const products = await getAllProducts();
+    res.status(200).json({
+        message: "Products fetched successfully",
+        products
+    });
+});
 
-export const getAllProducts = async (req, res) => {
-    try {
-        const products = await product.find();
-        return res.status(200).json(products);
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Something went wrong" });
+export const getProduct = catchAsync(async (req, res, next) => {
+    const product = await getProductById(req.params.id);
+    res.status(200).json({
+        message: "Product fetched successfully",
+        product
+    });
+});
+
+export const createProductController = catchAsync(async (req, res, next) => {
+    const { error, value } = createProductSchema.validate(req.body);
+    if (error) {
+        return next(new ApiError(400, error.details[0].message));
     }
-}
+    const newProduct = await createProduct(value);
+    res.status(201).json({
+        message: "Product created successfully",
+        product: newProduct
+    });
+});
 
-export const getProductById = async (req, res) => {
-    try {
-        const product = await product.findById(req.params.id);
-        if (!product) {
-            return res.status(404).json({ message: "Product not found" });
-        }
-        return res.status(200).json(product);
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Something went wrong" });
+export const updateProductController = catchAsync(async (req, res, next) => {
+    const { error, value } = updateProductSchema.validate(req.body);
+    if (error) {
+        return next(new ApiError(400, error.details[0].message));
     }
-}
+    const updatedProduct = await updateProduct(req.params.id, value);
+    res.status(200).json({
+        message: "Product updated successfully",
+        product: updatedProduct
+    });
+});
 
-export const createProduct = async (req, res) => {
-    try {
-        const newProduct = new product(req.body);
-        await newProduct.save();
-        return res.status(201).json(newProduct);
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Something went wrong" });
+export const deleteProductController = catchAsync(async (req, res, next) => {
+    await deleteProduct(req.params.id);
+    res.status(200).json({ message: "Product deleted successfully" });
+});
+
+export const deleteAllProductsController = catchAsync(async (req, res, next) => {
+    await deleteAllProducts();
+    res.status(200).json({ message: "All products deleted successfully" });
+});
+
+export const searchProductsController = catchAsync(async (req, res, next) => {
+    const { q: searchTerm } = req.query; // Use 'q' as the query parameter for search term
+    const products = await searchProducts(searchTerm);
+    res.status(200).json({
+        message: "Products fetched successfully based on search term",
+        products
+    });
+});
+
+export const getProductByUserIdController = catchAsync(async (req, res, next) => {
+    const product = await getProductByUserId(req.params.userId);
+    res.status(200).json({
+        message: "Product fetched successfully for user",
+        product
+    });
+});
+
+export const getAllProductsByUserIdController = catchAsync(async (req, res, next) => {
+    const products = await getAllProductsByUserId(req.params.userId);
+    res.status(200).json({
+        message: "Products fetched successfully for user",
+        products
+    });
+});
+
+export const createProductByUserIdController = catchAsync(async (req, res, next) => {
+    const { error, value } = createProductSchema.validate(req.body);
+    if (error) {
+        return next(new ApiError(400, error.details[0].message));
     }
-}
+    const newProduct = await createProductByUserId(req.params.userId, value);
+    res.status(201).json({
+        message: "Product created successfully for user",
+        product: newProduct
+    });
+});
 
-export const updateProduct = async (req, res) => {
-    try {
-        const updatedProduct = await product.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        if (!updatedProduct) {
-            return res.status(404).json({ message: "Product not found" });
-        }
-        return res.status(200).json(updatedProduct);
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Something went wrong" });
+export const updateProductByUserIdController = catchAsync(async (req, res, next) => {
+    const { error, value } = updateProductSchema.validate(req.body);
+    if (error) {
+        return next(new ApiError(400, error.details[0].message));
     }
-}
+    const updatedProduct = await updateProductByUserId(req.params.userId, value);
+    res.status(200).json({
+        message: "Product updated successfully for user",
+        product: updatedProduct
+    });
+});
 
-export const deleteProduct = async (req, res) => {
-    try {
-        const deletedProduct = await product.findByIdAndDelete(req.params.id);
-        if (!deletedProduct) {
-            return res.status(404).json({ message: "Product not found" });
-        }
-        return res.status(200).json({ message: "Product deleted successfully" });
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Something went wrong" });
-    }
-}
+export const deleteProductByUserIdController = catchAsync(async (req, res, next) => {
+    await deleteProductByUserId(req.params.userId);
+    res.status(200).json({ message: "Product deleted successfully for user" });
+});
 
-export const deleteAllProducts = async (req, res) => {
-    try {
-        await product.deleteMany({});
-        return res.status(200).json({ message: "All products deleted successfully" });
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Something went wrong" });
-    }
-}
-
-export const getProductByUserId = async (req, res) => {
-    try {
-        const product = await product.findOne({ userId: req.params.userId });
-        if (!product) {
-            return res.status(404).json({ message: "Product not found" });
-        }
-        return res.status(200).json(product);
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Something went wrong" });
-    }
-}
-
-export const getAllProductsByUserId = async (req, res) => {
-    try {
-        const products = await product.find({ userId: req.params.userId });
-        return res.status(200).json(products);
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Something went wrong" });
-    }
-}
-
-
-export const createProductByUserId = async (req, res) => {
-    try {
-        const newProduct = new product({ ...req.body, userId: req.params.userId });
-        await newProduct.save();
-        return res.status(201).json(newProduct);
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Something went wrong" });
-    }
-}
-
-export const updateProductByUserId = async (req, res) => {
-    try {
-        const updatedProduct = await product.findOneAndUpdate({ userId: req.params.userId }, req.body, { new: true });
-        if (!updatedProduct) {
-            return res.status(404).json({ message: "Product not found" });
-        }
-        return res.status(200).json(updatedProduct);
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Something went wrong" });
-    }
-}
-
-export const deleteProductByUserId = async (req, res) => {
-    try {
-        const deletedProduct = await product.findOneAndDelete({ userId: req.params.userId });
-        if (!deletedProduct) {
-            return res.status(404).json({ message: "Product not found" });
-        }
-        return res.status(200).json({ message: "Product deleted successfully" });
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Something went wrong" });
-    }
-}
-
-export const deleteAllProductsByUserId = async (req, res) => {
-    try {
-        await product.deleteMany({ userId: req.params.userId });
-        return res.status(200).json({ message: "All products deleted successfully" });
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Something went wrong" });
-    }
-}
+export const deleteAllProductsByUserIdController = catchAsync(async (req, res, next) => {
+    await deleteAllProductsByUserId(req.params.userId);
+    res.status(200).json({ message: "All products deleted successfully for user" });
+});

@@ -86,6 +86,8 @@ reviews:[{
 
 );
 
+productSchema.index({ title: 'text', description: 'text' }); // Add text index
+
 const product = mongoose.model('Product' , productSchema);
 
 export {product}

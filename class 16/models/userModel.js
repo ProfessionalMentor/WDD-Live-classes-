@@ -2,7 +2,7 @@ import mongoose from "mongoose"
 
 const userSchema = mongoose.Schema({
     userId:{
-        type:string,
+        type: String,
         required:true,
         unique:true
     },
@@ -17,16 +17,14 @@ const userSchema = mongoose.Schema({
     },
     password: {
         type: String,
-        unique: true,
         required: true
     },
-    phoneNo:{
-        type: Number,
+    phoneNo:{n        type: Number,
         required:true,
         unique:true
     },
     address:{
-         type:String,
+         type: String,
          required:true
     },
     isAdmin: {
@@ -38,7 +36,15 @@ const userSchema = mongoose.Schema({
         type: Boolean,
         required:true,
         default:false
-     }
+     },
+    role: {
+        type: String,
+        enum: ['user', 'admin', 'seller'], // Define allowed roles
+        default: 'user'
+    },
+    refreshToken: {
+        type: String
+    }
 },
 
 {

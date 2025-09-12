@@ -1,126 +1,109 @@
-import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
-import UserModel from "../models/userModel.js";
+import {
+    generateTokens,
+    setAuthCookies,
+    registerUser,
+    loginUser,
+    logoutUser,
+    refreshAccessToken, // Added this
+    getAllUsers,
+    getUserById,
+    updateUser,
+    deleteUser
+} from "../services/userService.js";
+import { registerSchema, loginSchema } from "../validations/userValidation.js";
+import ApiError from "../utils/ApiError.js";
+import catchAsync from "../utils/catchAsync.js";
 
-//token generator
-const generateTokens = (userId) => {
-    const accessToken = jwt.sign({ userId }, process.env.JWT_ACCESS_SECRET, { expiresIn: "3d" });
-    const refreshToken = jwt.sign({ userId }, process.env.JWT_ACCESS_SECRET, { expiresIn: "3d" });
-    return { accessToken, refreshToken };
-};
+export const register = catchAsync(async (req, res, next) => {
+    const { error, value } = registerSchema.validate(req.body);
+    if (error) {
+        return next(new ApiError(400, error.details[0].message));
+    }
 
-const setAuthCookies = (res, accessToken, refreshToken) => {
-    res.cookie("accessToken", accessToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        maxAge: 3 * 24 * 60 * 60 * 1000
+    const { user, accessToken, refreshToken } = await registerUser(value); // Receive tokens from service
+    setAuthCookies(res, accessToken, refreshToken);
+
+    res.status(201).json({
+        message: "User registered successfully",
+        user,
+        accessToken,
+        refreshToken
     });
+});
 
-    res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        maxAge: 7 * 24 * 60 * 60 * 1000
+export const login = catchAsync(async (req, res, next) => {
+    const { error, value } = loginSchema.validate(req.body);
+    if (error) {
+        return next(new ApiError(400, error.details[0].message));
+    }
+
+    const { email, password } = value;
+    const { user, accessToken, refreshToken } = await loginUser(email, password); // Receive tokens from service
+    setAuthCookies(res, accessToken, refreshToken);
+
+    res.status(200).json({
+        message: "User logged in successfully",
+        user,
+        accessToken,
+        refreshToken
     });
-};
+});
 
-export const register = async (req, res) => {
-    try {
-        const { FullName, email, password, phoneNo, address } = req.body;
+export const logout = catchAsync(async (req, res, next) => {
+    await logoutUser(res, req.user._id); // Pass userId to logoutUser
+    res.status(200).json({ message: "User logged out successfully" });
+});
 
-        const userExists = await UserModel.findOne({ email });
+export const refresh = catchAsync(async (req, res, next) => {
+    const { refreshToken: oldRefreshToken } = req.cookies;
 
-        if (userExists) {
-            return res.status(400).json({ message: "User already exists" });
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 12);
-        const user = await UserModel.create({ FullName, email, password: hashedPassword, phoneNo, address });
-        const { accessToken, refreshToken } = generateTokens(user._id);
-        setAuthCookies(res, accessToken, refreshToken);
-        return res.status(200).json({ message: "User registered successfully" });
-
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Something went wrong" });
+    if (!oldRefreshToken) {
+        return next(new ApiError(401, "Refresh token missing"));
     }
-};
 
-export const login = async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        const user = await UserModel.findOne({ email });
-        if (!user) {
-            return res.status(400).json({ message: "User not found" });
-        }
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-            return res.status(400).json({ message: "Invalid credentials" });
-        }
-        const { accessToken, refreshToken } = generateTokens(user._id);
-        setAuthCookies(res, accessToken, refreshToken);
-        return res.status(200).json({ message: "User logged in successfully" });
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Something went wrong" });
-    }
-};
+    const { accessToken, refreshToken } = await refreshAccessToken(oldRefreshToken);
+    setAuthCookies(res, accessToken, refreshToken);
 
-export const logout = async (req, res) => {
-    try {
-        res.clearCookie("accessToken");
-        res.clearCookie("refreshToken");
-        return res.status(200).json({ message: "User logged out successfully" });
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Something went wrong" });
-    }
-};
+    res.status(200).json({
+        message: "Access token refreshed successfully",
+        accessToken,
+        refreshToken
+    });
+});
 
-export const getAllUsers = async (req, res) => {
-    try {
-        const users = await UserModel.find();
-        res.status(200).json(users);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
+export const getUsers = catchAsync(async (req, res, next) => {
+    const users = await getAllUsers();
+    res.status(200).json({
+        message: "Users fetched successfully",
+        users
+    });
+});
 
-export const getUserById = async (req, res) => {
-    try {
-        const user = await UserModel.findById(req.params.id);
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-        res.status(200).json(user);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+export const getUser = catchAsync(async (req, res, next) => {
+    // Allow admin to get any user, but regular user can only get their own profile
+    if (req.user.role !== 'admin' && req.user._id.toString() !== req.params.id) {
+        return next(new ApiError(403, 'You do not have permission to access this user\'s profile'));
     }
-};
+    const user = await getUserById(req.params.id);
+    res.status(200).json({
+        message: "User fetched successfully",
+        user
+    });
+});
 
-export const updateUser = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const user = await UserModel.findByIdAndUpdate(id, req.body, { new: true });
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-        res.status(200).json(user);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+export const updateUserProfile = catchAsync(async (req, res, next) => {
+    // Allow admin to update any user, but regular user can only update their own profile
+    if (req.user.role !== 'admin' && req.user._id.toString() !== req.params.id) {
+        return next(new ApiError(403, "You do not have permission to update this user's profile"));
     }
-};
+    const user = await updateUser(req.params.id, req.body);
+    res.status(200).json({
+        message: "User updated successfully",
+        user
+    });
+});
 
-export const deleteUser = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const user = await UserModel.findByIdAndDelete(id);
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-        res.status(200).json({ message: "User deleted successfully" });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
+export const deleteUserAccount = catchAsync(async (req, res, next) => {
+    await deleteUser(req.params.id);
+    res.status(200).json({ message: "User deleted successfully" });
+});
