@@ -5,7 +5,7 @@ import UserModel from "../models/userModel.js";
 //token generator
 const generateTokens = (userId) => {
     const accessToken = jwt.sign({ userId }, process.env.JWT_ACCESS_SECRET, { expiresIn: "3d" });
-    const refreshToken = jwt.sign({ userId }, process.env.JWT_ACCESS_SECRET, { expiresIn: "7d" });
+    const refreshToken = jwt.sign({ userId }, process.env.JWT_ACCESS_SECRET, { expiresIn: "3d" });
     return { accessToken, refreshToken };
 };
 
@@ -56,7 +56,7 @@ export const login = async (req, res) => {
         }
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
-            return res.status(400).json({ message: "Invalid password" });
+            return res.status(400).json({ message: "Invalid credentials" });
         }
         const { accessToken, refreshToken } = generateTokens(user._id);
         setAuthCookies(res, accessToken, refreshToken);

@@ -48,6 +48,6 @@ const addressSchema = new mongoose.Schema({
 
 addressSchema.index({coordinates: "2dsphere"})
 
-const userAddress = mongoose.model('Address', userSchema)
+const userAddress = mongoose.model('Address', addressSchema)
 
 export { userAddress } 
