@@ -1,6 +1,7 @@
 import express from "express"
 import {route} from "./routes/userRoute.js"
 import {connectDB} from "./config/dbConfig.js"
+import cors from 'cors';
 
 // app
 const app = express()
@@ -16,10 +17,15 @@ connectDB()
 
 
 import { routeRegister } from "./routes/userRegisterRoute.js"
-app.use ("/register" , routeRegister)
+app.use ("/" , routeRegister)
 app.use(route)
 
-
+app.use(cors(
+  {
+    origin: 'http://localhost:5173/',
+    optionsSuccessStatus: 200 
+  },
+))
 
 
 // listening port

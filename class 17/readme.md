@@ -1,0 +1,1 @@
+1. Medical platform --> online pharmacy app --> Multer, third party services cloudinary
