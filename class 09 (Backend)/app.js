@@ -1,37 +1,18 @@
-import express from "express"
-import {route} from "./routes/userRoute.js"
-import {connectDB} from "./config/dbConfig.js"
-import cors from 'cors';
-
-// app
+import express from 'express'
+import {connectDB} from './config/dbConfig.js'
 const app = express()
-const port = process.env.PORT || 3000
 
 
-// connection with mongoDB
 connectDB()
-
-
 
 // Routes
 
+import { userRegister } from './routes/userRegisterRoute.js'
 
-import { routeRegister } from "./routes/userRegisterRoute.js"
-app.use ("/" , routeRegister)
-app.use(route)
+app.use(express.json())
 
-app.use(cors(
-  {
-    origin: 'http://localhost:5173/',
-    optionsSuccessStatus: 200 
-  },
-))
+app.use ('/' , userRegister )
 
 
-// listening port
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
-
-export {app}
+export default app

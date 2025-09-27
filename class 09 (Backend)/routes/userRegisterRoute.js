@@ -1,11 +1,9 @@
-import express from "express";
-import { registerUser } from "../controllers/userController.js";
+import express from "express"
+import { register } from "../controllers/userController.js";
 
-const routeRegister = express.Router();
+const userRegister =  express.Router()
 
-// @route   POST /api/users/register
-// @desc    Register a new user
-// @access  Public
-routeRegister.post("/register", registerUser);
+userRegister.post ('/register' , register)
 
-export {routeRegister};
+
+export{userRegister};
